@@ -10,7 +10,7 @@ from github import Github
 
 def starred_repos(user):
     starred = user.get_starred()
-    total_pages = ceil(starred.totalCount / 30) 
+    total_pages = ceil(starred.totalCount / 30)
 
     for page_num in range(0, total_pages):
         for repo in starred.get_page(page_num):
@@ -22,8 +22,9 @@ def main():
     if not user_name:
         print("Please set environmental variable 'GH_USER' to a valid GitHub user name.", file=sys.stderr)
         exit(1)
+    token = os.environ.get("GITHUB_TOKEN")
 
-    gh = Github()
+    gh = Github(token) if token else Github()
     user = gh.get_user(user_name)
 
     writer = csv.writer(sys.stdout)
