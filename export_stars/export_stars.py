@@ -1,11 +1,13 @@
 #!env python
 
-import os
 import sys
 import csv
 
 from math import ceil
+from argparse import ArgumentParser
+
 from github import Github
+from github.GithubException import RateLimitExceededException
 
 
 def starred_repos(user):
@@ -17,17 +19,24 @@ def starred_repos(user):
             yield repo
 
 
-def main():
-    user_name = os.environ.get("GH_USER", None)
-    if not user_name:
-        print("Please set environmental variable 'GH_USER' to a valid GitHub user name.", file=sys.stderr)
-        exit(1)
-    token = os.environ.get("GITHUB_TOKEN")
+def parse_args():
+    parser = ArgumentParser(description="export a GitHub user's starred repositorys to CSV")
+    parser.add_argument("--user")
+    parser.add_argument("--github-token")
+    return parser.parse_args()
 
-    gh = Github(token) if token else Github()
-    user = gh.get_user(user_name)
+
+def main():
+    args = parse_args()
+    if not args.user:
+        print("Please set `--user` to a valid GitHub user name.", file=sys.stderr)
+        exit(1)
+
+    gh = Github(args.token) if args.token else Github()
+    user = gh.get_user(args.user)
 
     writer = csv.writer(sys.stdout)
+
     for repo in starred_repos(user):
         writer.writerow((repo.html_url, repo.description))
 
