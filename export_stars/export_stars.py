@@ -7,7 +7,7 @@ from math import ceil
 from argparse import ArgumentParser
 
 from github import Github
-from github.GithubException import RateLimitExceededException
+from urllib3 import Retry
 
 
 def starred_repos(user):
@@ -17,6 +17,15 @@ def starred_repos(user):
     for page_num in range(0, total_pages):
         for repo in starred.get_page(page_num):
             yield repo
+
+
+def config_retry(backoff_factor=1.0, total=8):
+    """urllib3 will sleep for:
+        {backoff factor} * (2 ** ({number of total retries} - 1))
+
+    Recalculates and Overrides Retry.DEFAULT_BACKOFF_MAX"""
+    Retry.DEFAULT_BACKOFF_MAX = backoff_factor * 2 ** (total - 1)
+    return Retry(total=total, backoff_factor=backoff_factor)
 
 
 def parse_args():
@@ -32,7 +41,7 @@ def main():
         print("Please set `--user` to a valid GitHub user name.", file=sys.stderr)
         exit(1)
 
-    gh = Github(args.token) if args.token else Github()
+    gh = Github(args.token, retry=config_retry()) if args.token else Github(retry=config_retry())
     user = gh.get_user(args.user)
 
     writer = csv.writer(sys.stdout)
