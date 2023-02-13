@@ -41,7 +41,7 @@ def main():
         print("Please set `--user` to a valid GitHub user name.", file=sys.stderr)
         exit(1)
 
-    gh = Github(args.token, retry=config_retry()) if args.token else Github(retry=config_retry())
+    gh = Github(args.github_token, retry=config_retry()) if args.github_token else Github(retry=config_retry())
     user = gh.get_user(args.user)
 
     writer = csv.writer(sys.stdout)
