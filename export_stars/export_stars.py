@@ -2,12 +2,15 @@
 
 import sys
 import csv
+import os
 
 from math import ceil
 from argparse import ArgumentParser
+from urllib3 import Retry
 
 from github import Github
-from urllib3 import Retry
+
+GH_TOKEN = os.getenv("GH_TOKEN")
 
 
 def starred_repos(user):
@@ -29,19 +32,21 @@ def config_retry(backoff_factor=1.0, total=8):
 
 
 def parse_args():
-    parser = ArgumentParser(description="export a GitHub user's starred repositorys to CSV")
+    parser = ArgumentParser(
+        description="export a GitHub user's starred repositories to CSV"
+    )
     parser.add_argument("--user")
-    parser.add_argument("--github-token")
     return parser.parse_args()
 
 
 def main():
+    assert isinstance(GH_TOKEN, str), "GH_TOKEN environment is required"
     args = parse_args()
     if not args.user:
         print("Please set `--user` to a valid GitHub user name.", file=sys.stderr)
         exit(1)
 
-    gh = Github(args.token, retry=config_retry()) if args.token else Github(retry=config_retry())
+    gh = Github(GH_TOKEN, retry=config_retry())
     user = gh.get_user(args.user)
 
     writer = csv.writer(sys.stdout)

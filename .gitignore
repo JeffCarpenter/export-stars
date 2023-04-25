@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+.env
+venv/
+stars.csv
+.vscode/
