@@ -28,16 +28,14 @@ def config_retry(backoff_factor=1.0, total=8):
     return Retry(total=total, backoff_factor=backoff_factor)
 
 
-def parse_args():
-    parser = ArgumentParser(description="export a GitHub user's starred repositorys to CSV")
-    parser.add_argument("--user")
-    parser.add_argument("--github-token")
-    return parser.parse_args()
-
-
 def main():
-    args = parse_args()
+    parser = ArgumentParser(description="export a GitHub user's starred repositories to CSV")
+    parser.add_argument("--user", dest='user')
+    parser.add_argument("--github-token", dest='token')
+    args = parser.parse_args()
     if not args.user:
+        parser.print_usage()
+        print('')
         print("Please set `--user` to a valid GitHub user name.", file=sys.stderr)
         exit(1)
 
