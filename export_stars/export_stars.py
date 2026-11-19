@@ -5,8 +5,9 @@ import csv
 
 from math import ceil
 from argparse import ArgumentParser
+from functools import partial
 
-from github import Github
+from github import Auth, Github, GithubObject
 from urllib3 import Retry
 
 
@@ -37,12 +38,17 @@ def parse_args():
 
 def main():
     args = parse_args()
-    if not args.user:
+        
+    gh = partial(Github, retry=config_retry())
+    if args.auth_token:
+        client = gh(auth=Auth.Token(args.auth_token))
+        user = client.get_user(args.user or GithubObject.NotSet)
+    elif args.user:
+        client = gh()
+        user = client.get_user(args.user)
+    else:
         print("Please set `--user` to a valid GitHub user name.", file=sys.stderr)
         exit(1)
-
-    gh = Github(args.auth_token, retry=config_retry()) if args.auth_token else Github(retry=config_retry())
-    user = gh.get_user(args.user)
 
     writer = csv.writer(sys.stdout)
 
