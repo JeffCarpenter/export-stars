@@ -2,7 +2,7 @@
 name = "export-stars"
 version = "0.1.0"
 description = "Export the URLs and descriptions of repositories you've starred on GitHub"
-readme = "readme.md"
+readme = "README.md"
 authors = [
     { name = "Jeff C", email = "pub@jeffc.ca" }
 ]
