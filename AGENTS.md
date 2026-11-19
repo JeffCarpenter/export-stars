@@ -2,7 +2,7 @@
 
 ## Project Structure
 
-`export_stars/export_stars.py` implements the CLI, GitHub pagination, retry configuration, and CSV output. `export_stars/__init__.py` exposes `starred_repos(user)` for Python callers. The flat package layout, dependencies, and `export-stars` entry point are defined in `pyproject.toml`. Keep `uv.lock` in sync with dependency changes. The package uses `README.md` for its long description.
+`export_stars/export_stars.py` implements the CLI, GitHub pagination, retry configuration, and CSV output. `export_stars/__init__.py` exposes `starred_repos(user)` for Python callers; it returns a flat list of starred repositories. The flat package layout, dependencies, and `export-stars` entry point are defined in `pyproject.toml`. Keep `uv.lock` in sync with dependency changes. The package uses `README.md` for its long description.
 
 ## Build and Development Commands
 
@@ -13,11 +13,9 @@ Use uv with Python 3.14, as pinned in `.python-version`.
 - `uv build` builds the source distribution and wheel.
 - `uv run --locked export-stars --help` checks that the installed CLI starts and lists its options.
 
-The export path currently raises `AttributeError` because the parser stores `--github-token` as `github_token` and `main()` reads `args.token`.
-
 ## Coding Style
 
-Use four spaces for Python indentation and `snake_case` for functions and variables. Follow the surrounding code for imports and naming. Preserve the public `starred_repos(user)` iterator when changing pagination. Write CSV rows to standard output and diagnostics to standard error so shell redirection produces a usable CSV file. Keep GitHub credentials out of tracked files and examples.
+Use four spaces for Python indentation and `snake_case` for functions and variables. Follow the surrounding code for imports and naming. Preserve the public `starred_repos(user)` function, which returns a flat list of all starred repositories, when changing pagination. Write CSV rows to standard output and diagnostics to standard error so shell redirection produces a usable CSV file. Keep GitHub credentials out of tracked files and examples.
 
 ## Testing
 

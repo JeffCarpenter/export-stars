@@ -12,31 +12,16 @@ uv sync --locked
 
 ## Usage
 
-View the available options with `uv run --locked export-stars --help`. The CLI takes `--user` for the GitHub username and `--github-token` for an optional token. It is designed to write CSV to standard output, so you can redirect it to a file.
+View the available options with `uv run --locked export-stars --help`. The CLI takes `--user` for the GitHub username and `--auth-token` for an optional token, which defaults to the `GITHUB_TOKEN` environment variable. With a token and no `--user`, it exports the authenticated user's stars. It writes CSV to standard output and errors to standard error, so you can redirect it to a file.
 
 ```sh
 uv run --locked export-stars --user octocat > stars.csv
+GITHUB_TOKEN=... uv run --locked export-stars > my-stars.csv
 ```
 
-**Known issue:** The current CLI exits before contacting GitHub because it reads `args.token` while the parser stores `args.github_token`. Until that is fixed, use the Python API to export public stars.
+Unauthenticated requests are limited to 60 per hour, about 6,000 stars at 100 per page. All pages are fetched before any CSV is written, so if GitHub refuses a request, the command exits with status 1 and writes no rows.
 
-```sh
-uv run --locked python - > stars.csv <<'PY'
-import csv
-import sys
-
-from github import Github
-
-from export_stars import starred_repos
-
-user = Github().get_user("octocat")
-writer = csv.writer(sys.stdout)
-for repo in starred_repos(user):
-    writer.writerow((repo.html_url, repo.description))
-PY
-```
-
-Replace `octocat` with the GitHub username you want to export.
+Python callers can use `export_stars.starred_repos(user)`, which returns a flat list of every repository starred by a PyGithub user object.
 
 ## Development
 

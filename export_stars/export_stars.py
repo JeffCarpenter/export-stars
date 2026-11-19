@@ -1,59 +1,65 @@
-#!env python
+#!/usr/bin/env python3
 
-import sys
 import csv
+import os
+import sys
 
-from math import ceil
 from argparse import ArgumentParser
-from functools import partial
 
-from github import Auth, Github, GithubObject
+from github import Auth, Github, GithubException, GithubObject
 from urllib3 import Retry
 
 
 def starred_repos(user):
-    starred = user.get_starred()
-    total_pages = ceil(starred.totalCount / 30)
-
-    for page_num in range(0, total_pages):
-        for repo in starred.get_page(page_num):
-            yield repo
+    """Return every repository the user has starred, across all pages, as one flat list."""
+    return list(user.get_starred())
 
 
 def config_retry(backoff_factor=1.0, total=8):
     """urllib3 will sleep for:
         {backoff factor} * (2 ** ({number of total retries} - 1))
 
-    Recalculates and Overrides Retry.DEFAULT_BACKOFF_MAX"""
-    Retry.DEFAULT_BACKOFF_MAX = backoff_factor * 2 ** (total - 1)
-    return Retry(total=total, backoff_factor=backoff_factor)
+    Caps the backoff at the longest sleep this schedule produces."""
+    return Retry(
+        total=total,
+        backoff_factor=backoff_factor,
+        backoff_max=backoff_factor * 2 ** (total - 1),
+    )
 
 
 def parse_args():
-    parser = ArgumentParser(description="export a GitHub user's starred repositorys to CSV")
+    parser = ArgumentParser(description="export a GitHub user's starred repositories to CSV")
     parser.add_argument("--user")
-    parser.add_argument("--auth-token")
+    parser.add_argument(
+        "--auth-token",
+        default=os.environ.get("GITHUB_TOKEN"),
+        help="GitHub token (defaults to $GITHUB_TOKEN)",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-        
-    gh = partial(Github, retry=config_retry())
-    if args.auth_token:
-        client = gh(auth=Auth.Token(args.auth_token))
-        user = client.get_user(args.user or GithubObject.NotSet)
-    elif args.user:
-        client = gh()
-        user = client.get_user(args.user)
-    else:
-        print("Please set `--user` to a valid GitHub user name.", file=sys.stderr)
-        exit(1)
 
+    if not (args.auth_token or args.user):
+        print("Please set `--user` to a valid GitHub user name.", file=sys.stderr)
+        sys.exit(1)
+
+    auth = Auth.Token(args.auth_token) if args.auth_token else None
+    client = Github(auth=auth, per_page=100, retry=config_retry())
+    sys.stdout.reconfigure(newline="")
     writer = csv.writer(sys.stdout)
 
-    for repo in starred_repos(user):
-        writer.writerow((repo.html_url, repo.description))
+    try:
+        user = client.get_user(args.user or GithubObject.NotSet)
+        repos = starred_repos(user)
+    except GithubException as e:
+        print(f"GitHub request failed ({e.status}): {e.data}", file=sys.stderr)
+        if e.status == 403 and not args.auth_token:
+            print("You may be rate limited; pass --auth-token or set GITHUB_TOKEN.", file=sys.stderr)
+        sys.exit(1)
+
+    writer.writerows((repo.html_url, repo.description) for repo in repos)
 
 
 if __name__ == "__main__":
